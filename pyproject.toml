@@ -1,0 +1,8 @@
+[project]
+name = "mc-server-status-notify"
+version = "0.1.0"
+description = "Check the online status of a Minecraft server, notify via Discord webhook when the status changed."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+dependencies = ["loguru>=0.7.2", "requests>=2.32.3"]
