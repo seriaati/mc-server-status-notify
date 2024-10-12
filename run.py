@@ -1,4 +1,3 @@
-import socket
 from loguru import logger
 import requests
 import pathlib
@@ -7,30 +6,22 @@ import argparse
 import json
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--ip", type=str, required=True)
-parser.add_argument("--port", type=int, required=True)
+parser.add_argument("--address", type=str, required=True)
 parser.add_argument("--webhook-url", type=str, required=True)
 args = parser.parse_args()
 
-ip = args.ip
-port = args.port
+address = args.address
 webhook_url = args.webhook_url
 
 data_path = pathlib.Path("server_status.json")
 
 
 def check_server_status() -> bool:
-    try:
-        logger.info(f"Checking server {ip}:{port}")
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(2)
-            s.connect((ip, port))
-            return True
-    except (socket.timeout, ConnectionRefusedError):
-        return False
-    except Exception:
-        logger.exception("Error while checking server")
-        return False
+    url = f"https://api.mcsrvstat.us/3/{address}"
+    response = requests.get(url)
+    response.raise_for_status()
+    data = response.json()
+    return data["online"]
 
 
 def get_server_status() -> bool:
@@ -42,23 +33,23 @@ def get_server_status() -> bool:
             json.dump({}, f, indent=4)
         return False
 
-    return data.get(f"{ip}:{port}", False)
+    return data.get(address, False)
 
 
 def save_server_status(status: bool) -> None:
     with data_path.open("r") as f:
         data = json.load(f)
 
-    data[f"{ip}:{port}"] = status
+    data[address] = status
     with data_path.open("w") as f:
         json.dump(data, f, indent=4)
 
 
 def send_webhook(status: bool) -> None:
     if status:
-        message = f"伺服器 {ip}:{port} 已上線"
+        message = f"伺服器 {address} 已上線"
     else:
-        message = f"伺服器 {ip}:{port} 已離線"
+        message = f"伺服器 {address} 已離線"
 
     data = {"content": message}
     response = requests.post(webhook_url, json=data)
