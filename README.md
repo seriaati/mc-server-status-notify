@@ -5,5 +5,5 @@
 ## Usage
 
 ```bash
-python run.py --ip <server-ip-or-hostname> --port <server-port> --webhook <discord-webhook-url>
+python run.py --address <address> --webhook <discord-webhook-url>
 ```
