@@ -44,7 +44,7 @@ def get_server_status() -> ServerStatus:
         with data_path.open("w") as f:
             json.dump(data, f, indent=4)
 
-    return ServerStatus(**data.get(address, {"status": False, "time": get_now()}))
+    return data.get(address, {"online": False, "time": get_now()})
 
 
 def save_server_status(status: ServerStatus) -> None:
