@@ -1,6 +1,8 @@
+from typing import TypedDict
 from loguru import logger
 import requests
 import pathlib
+import datetime
 
 import argparse
 import json
@@ -16,7 +18,16 @@ webhook_url = args.webhook_url
 data_path = pathlib.Path("server_status.json")
 
 
-def check_server_status() -> bool:
+class ServerStatus(TypedDict):
+    online: bool
+    time: str
+
+
+def get_now() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def is_server_online() -> bool:
     url = f"https://api.mcsrvstat.us/3/{address}"
     response = requests.get(url)
     response.raise_for_status()
@@ -24,19 +35,19 @@ def check_server_status() -> bool:
     return data["online"]
 
 
-def get_server_status() -> bool:
+def get_server_status() -> ServerStatus:
     try:
         with data_path.open("r") as f:
             data = json.load(f)
     except FileNotFoundError:
+        data = {}
         with data_path.open("w") as f:
-            json.dump({}, f, indent=4)
-        return False
+            json.dump(data, f, indent=4)
 
-    return data.get(address, False)
+    return ServerStatus(**data.get(address, {"status": False, "time": get_now()}))
 
 
-def save_server_status(status: bool) -> None:
+def save_server_status(status: ServerStatus) -> None:
     with data_path.open("r") as f:
         data = json.load(f)
 
@@ -45,9 +56,13 @@ def save_server_status(status: bool) -> None:
         json.dump(data, f, indent=4)
 
 
-def send_webhook(status: bool) -> None:
-    if status:
-        message = f"伺服器 {address} 已上線"
+def send_webhook(status: ServerStatus, last_status: ServerStatus) -> None:
+    if status["online"]:
+        time_diff = datetime.datetime.fromisoformat(
+            get_now()
+        ) - datetime.datetime.fromisoformat(last_status["time"])
+        time_diff_str = str(time_diff).split(".")[0]
+        message = f"伺服器 {address} 已上線, 距離上次離線時間: {time_diff_str}"
     else:
         message = f"伺服器 {address} 已離線"
 
@@ -57,15 +72,16 @@ def send_webhook(status: bool) -> None:
 
 
 def main():
-    current_status = check_server_status()
+    current_status = is_server_online()
     logger.info(f"Current status: {current_status}")
     last_status = get_server_status()
     logger.info(f"Last status: {last_status}")
 
-    if current_status != last_status:
+    if current_status != last_status["online"]:
+        server_status = ServerStatus(online=current_status, time=get_now())
         logger.info("Status changed, sending webhook...")
-        save_server_status(current_status)
-        send_webhook(current_status)
+        save_server_status(server_status)
+        send_webhook(server_status, last_status)
 
 
 if __name__ == "__main__":
