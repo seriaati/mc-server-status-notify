@@ -5,7 +5,11 @@ description = "Check the online status of a Minecraft server, notify via Discord
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
-dependencies = ["loguru>=0.7.2", "requests>=2.32.3"]
+dependencies = [
+    "loguru>=0.7.2",
+    "mcstatus>=11.1.1",
+    "requests>=2.32.3",
+]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
