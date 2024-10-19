@@ -1,7 +1,6 @@
 from typing import TypedDict
 from loguru import logger
 import requests
-from mcstatus import JavaServer
 import pathlib
 import datetime
 
@@ -29,13 +28,9 @@ def get_now() -> str:
 
 
 def is_server_online() -> bool:
-    try:
-        JavaServer.lookup(address)
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        return False
-    else:
-        return True
+    response = requests.get(f"https://api.mcsrvstat.us/3/{address}")
+    data = response.json()
+    return data.get("online", False)
 
 
 def get_server_status() -> ServerStatus:
