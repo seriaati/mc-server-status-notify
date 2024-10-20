@@ -3,6 +3,7 @@ from loguru import logger
 import requests
 import pathlib
 import datetime
+from mcstatus import JavaServer
 
 import argparse
 import json
@@ -28,9 +29,14 @@ def get_now() -> str:
 
 
 def is_server_online() -> bool:
-    response = requests.get(f"https://api.mcsrvstat.us/3/{address}")
-    data = response.json()
-    return data.get("online", False)
+    try:
+        server = JavaServer.lookup(address)
+        status = server.status()
+        if status.players.max == 0:
+            return False
+        return True
+    except Exception:
+        return False
 
 
 def get_server_status() -> ServerStatus:
