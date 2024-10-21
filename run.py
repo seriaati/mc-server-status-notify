@@ -11,7 +11,6 @@ import json
 parser = argparse.ArgumentParser()
 parser.add_argument("--address", type=str, required=True)
 parser.add_argument("--webhook-url", type=str, required=True)
-parser.add_argument("--ignore-errors", action="store_true", default=False)
 args = parser.parse_args()
 
 address = args.address
@@ -38,7 +37,7 @@ def is_server_online() -> bool:
         return True
     except Exception:
         logger.exception("Failed to get server status")
-        return True if args.ignore_errors else False
+        return False
 
 
 def get_server_status() -> ServerStatus:
